@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>C2P - Click to Pick</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Poppins:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+        <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <!-- Firebase Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <!-- Firebase Authentication -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: #141414;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 60px;
+            background: rgba(0, 0, 0, 0.9);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        .logo {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #e50914;
+        }
+        .logo img {
+            height: 40px; /* adjust to fit navbar */
+            width: auto;
+            object-fit: contain;
+        }
+
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            margin-left: 20px;
+            font-size: 1.1rem;
+            font-family: 'Montserrat', sans-serif;
+        }
+        nav a:hover {
+            color: #e50914;
+        }
+                /* Dropdown menu for Genres */
+        .dropdown {
+        position: relative;
+        display: inline-block;
+        }
+
+        .dropdown-menu {
+        display: none;
+        position: absolute;
+        top: 100%; /* below the nav link */
+        left: 0;
+        background: rgba(20, 20, 20, 0.95);
+        min-width: 180px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        flex-direction: column;
+        padding: 10px 0;
+        z-index: 1000;
+        }
+
+        .dropdown-menu a {
+        padding: 10px 20px;
+        display: block;
+        color: #fff;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1rem;
+        text-decoration: none;
+        }
+
+        .dropdown-menu a:hover {
+        background: #333;
+        color: #e50914;
+        }
+
+        .dropdown:hover .dropdown-menu {
+        display: flex;
+        }
+
+        /* Smooth scroll when clicking genres */
+        html {
+        scroll-behavior: smooth;
+        }
+
+
+        /* Hero section */
+        .hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 60px;
+            height: 80vh;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            filter: blur(15px) brightness(0.4);
+            z-index: 0;
+            opacity: 1;
+            transition: opacity 1s ease-in-out;
+        }
+        .hero-bg.fade {
+            opacity: 0;
+        }
+        .hero-bg.show {
+            opacity: 1;
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40%;
+            background: linear-gradient(to top, #141414, transparent);
+            z-index: 0;
+        }
+        .hero-content,
+        .wheel-container {
+            position: relative;
+            z-index: 1;
+        }
+        .hero-content h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            animation: fadeInUp 1s ease forwards;
+        }
+        .hero-content h1 span.to {
+            color: #e50914;
+        }
+        .hero-content p {
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            animation: fadeInUp 1.5s ease forwards;
+        }
+        .hero-content button {
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(90deg, #e50914, #b20710);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .hero-content button:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 20px rgba(229, 9, 20, 0.7);
+        }
+
+        .wheel-container {
+            width: 350px;
+            height: 350px;
+            position: relative;
+            margin-right: 60px;
+        }
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 12px solid #000;
+            transition: transform 4s ease-out;
+            background: conic-gradient(
+                #e50914 0deg 30deg,
+                #000 30deg 60deg,
+                #e50914 60deg 90deg,
+                #000 90deg 120deg,
+                #e50914 120deg 150deg,
+                #000 150deg 180deg,
+                #e50914 180deg 210deg,
+                #000 210deg 240deg,
+                #e50914 240deg 270deg,
+                #000 270deg 300deg,
+                #e50914 300deg 330deg,
+                #000 330deg 360deg
+            );
+        }
+
+        /* Keep your existing wheel styles */
+#wheel {
+  box-shadow: 
+    0 0 15px rgba(229, 9, 20, 0.8),
+    0 0 30px rgba(229, 9, 20, 0.6),
+    0 0 45px rgba(229, 9, 20, 0.4);
+  animation: glowPulse 2.5s infinite alternate;
+}
+
+/* Pulsing glow animation */
+@keyframes glowPulse {
+  from {
+    box-shadow: 
+      0 0 10px rgba(229, 9, 20, 0.5),
+      0 0 20px rgba(229, 9, 20, 0.4),
+      0 0 30px rgba(229, 9, 20, 0.2);
+  }
+  to {
+    box-shadow: 
+      0 0 20px rgba(229, 9, 20, 1),
+      0 0 40px rgba(229, 9, 20, 0.8),
+      0 0 60px rgba(229, 9, 20, 0.6);
+  }
+}
+
+.pointer {
+    position: absolute;
+    top: -14px; /* position above the wheel */
+    left: 53%;  /* move arrow slightly right */
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 20px solid transparent;
+    border-right: 20px solid transparent;
+    border-top: 30px solid #fff; /* arrow pointing downwards */
+    z-index: 2; /* on top of wheel */
+}
+
+.spin-label {
+    position: absolute;
+    bottom: -70px; /* keeps it below the wheel */
+    left: 52%; /* slight right shift */
+    transform: translateX(-50%);
+    font-family: 'Montserrat', sans-serif; /* same as homepage */
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: #fff; /* white text */
+    text-align: center;
+    letter-spacing: 1px;
+    z-index: 1;
+}
+
+.spin-label .highlight {
+    color: #e50914; /* same red as "to" in homepage logo */
+}
+
+
+
+.movie-section {
+    padding: 40px 60px;
+    position: relative;
+   /* hidden until button clicked */
+    scroll-margin-top: 120px; /* offset for sticky navbar */
+}
+        .movie-section h2 {
+            margin-bottom: 20px;
+            color: #e50914;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2rem;
+        }
+        .movie-row {
+            display: flex;
+            overflow-x: auto;
+            gap: 15px;
+            scroll-behavior: smooth;
+            padding-bottom: 10px;
+        }
+        .movie-row::-webkit-scrollbar {
+            height: 8px;
+            background: #333;
+        }
+        .movie-row::-webkit-scrollbar-thumb {
+            background: #e50914;
+            border-radius: 4px;
+        }
+
+        .movie-card {
+            flex: 0 0 auto;
+            width: 200px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #1f1f1f;
+            position: relative;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: transform 0.5s ease, opacity 0.5s ease;
+            cursor: pointer;
+        }
+        .movie-card.visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .movie-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            display: block;
+        }
+        .movie-card:hover {
+            transform: scale(1.08);
+            box-shadow: 0 10px 25px rgba(229, 9, 20, 0.4);
+        }
+
+        .overlay {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            text-align: center;
+            transition: background 0.3s ease;
+        }
+        .overlay h4 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+        .overlay p {
+            margin: 5px 0 0;
+            font-size: 0.9rem;
+            color: #ffcc00;
+            font-weight: 500;
+        }
+        .movie-card:hover .overlay h4 {
+            color: #e50914;
+        }
+
+        .scroll-btn {
+            position: absolute;
+            top: 40%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            border: none;
+            font-size: 2rem;
+            padding: 10px;
+            cursor: pointer;
+            z-index: 100;
+            transition: opacity 0.3s ease, background 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .scroll-btn.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .scroll-btn:hover {
+            background: rgba(229, 9, 20, 0.8);
+        }
+        .scroll-btn.left {
+            left: 10px;
+        }
+        .scroll-btn.right {
+            right: 10px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: #000;
+            color: #999;
+            margin-top: 40px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .modal-content {
+            background: #1f1f1f;
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+        }
+        .modal-content img {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .modal-content h3 {
+            margin-bottom: 10px;
+        }
+        .modal-content button {
+            padding: 10px 20px;
+            border: none;
+            background: #e50914;
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .modal-content button:hover {
+            background: #b20710;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .search-bar {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 20px;
+            background: #222;
+            border-radius: 20px;
+            padding: 5px 10px;
+            }
+
+            .search-bar input {
+            border: none;
+            background: transparent;
+            color: #fff;
+            outline: none;
+            padding: 5px;
+            width: 150px;
+            font-family: 'Poppins', sans-serif;
+            }
+
+            .search-bar button {
+            background: none;
+            border: none;
+            color: #e50914;
+            font-size: 1.2rem;
+            cursor: pointer;
+            }
+            .search-bar button:hover {
+            color: #fff;
+            }
+           .search-bar input {
+            border: none;
+            background: transparent;
+            color: #fff;
+            outline: none;
+            padding: 5px;
+            width: 150px;
+            font-family: 'Poppins', sans-serif;
+            transition: opacity 0.5s ease-in-out; /* smooth fade */
+            }
+
+            .search-bar input.fade {
+            opacity: 0; /* fade out when class added */
+            }
+            .search-bar button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, fill 0.2s ease;
+}
+
+.search-bar button:hover svg {
+    transform: scale(1.1);
+    fill: #e50914; /* Netflix red on hover */
+}
+
+.search-bar button svg {
+    display: block;
+    fill: white; /* default black color */
+}
+
+/* Wishlist Section */
+#wishlistSection {
+  display: none; /* hidden until movies are added */
+  padding: 40px 60px;
+}
+#wishlistMovies {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 15px;
+}
+.wishlist-card {
+  position: relative;
+  background: #1f1f1f;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.wishlist-card img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+}
+.remove-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #e50914;
+  border: none;
+  color: #fff;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.remove-btn:hover {
+  background: #b20710;
+}
+
+.wishlist-btn {
+  position: absolute;
+  bottom: 10px;   /* distance from bottom of card */
+  right: 10px;    /* distance from right of card */
+  background: #e50914;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 30px;    /* smaller width */
+  height: 30px;   /* smaller height */
+  font-size: 0.9rem;  /* smaller heart */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease, background 0.1s ease;
+}
+
+.wishlist-btn.pop {
+  animation: pop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); /* was 0.35s */
+}
+
+.wishlist-btn:hover {
+  background: #b20710;
+}
+
+/* Fullscreen Search Overlay */
+.overlay-search {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 10, 10, 0.95);
+  display: none;
+  flex-direction: column;
+  z-index: 2000;
+  overflow-y: auto;
+  padding: 20px 40px;
+}
+
+.overlay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.overlay-header h2 {
+  color: white;
+  font-size: 1.5rem;
+}
+
+.close-btn {
+  background: #e50914;
+  border: none;
+  color: white;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.overlay-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 15px;
+}
+
+.overlay-content .movie-card {
+  background: #1f1f1f;
+}
+
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.wishlist-btn {
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.wishlist-btn.pop {
+  animation: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.4); }
+  60% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+.hero-content .tagline {
+    font-size: 1.35rem;               /* slightly larger for emphasis */
+    font-weight: 500;
+    color: #f5f5f5;                   /* keep original soft off-white */
+    margin: 12px 0 22px 0;            /* slightly more spacing for elegance */
+    letter-spacing: 0.5px;            /* gentle spacing for readability */
+    line-height: 1.5;                 /* improves legibility */
+    animation: fadeInUp 1.2s ease forwards;
+}
+#scrollBottomBtn { 
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    background: #fff;          
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 0.85;
+    font-size: 30px;           
+    font-weight: 200;          
+    color: #000;               
+}
+
+#scrollBottomBtn span {
+    display: inline-block;
+    transform: rotate(90deg);
+    transform-origin: center; /* center rotation */
+    position: relative;
+    left: 1px; /* small adjustment to move arrow visually to center */
+}
+
+#scrollBottomBtn:hover {
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+
+
+    </style>
+</head>
+<body>
+<header>
+<div class="logo">
+  <img src="logo.png" alt="C2P Logo" id="logoImg">
+</div>
+
+  <nav>
+  <a href="#">Home</a>
+  <div class="dropdown">
+    <a href="#">Genres ▾</a>
+    <div class="dropdown-menu">
+      <a href="#adventureMovies">Adventure</a>
+      <a href="#horrorMovies">Horror</a>
+      <a href="#thrillerMovies">Thriller</a>
+      <a href="#actionMovies">Action</a>
+      <a href="#comedyMovies">Comedy</a>
+      <a href="#dramaMovies">Drama</a>
+      <a href="#fantasyMovies">Fantasy</a>
+      <a href="#sciFiMovies">Sci-Fi</a>
+    </div>
+  </div>
+  <a href="#topPicks">Top Picks</a>
+
+  <!-- 🔍 Search Bar -->
+ <div class="search-bar">
+  <input type="text" id="searchInput" placeholder="Search movies...">
+  <button onclick="searchMovies()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+      <path d="M21.71 20.29l-3.388-3.388A8.945 8.945 0 0018 10a9 9 0 10-9 9 8.945 8.945 0 006.902-2.678l3.388 3.388a1 1 0 001.42-1.42zM4 10a6 6 0 1112 0 6 6 0 01-12 0z"/>
+    </svg>
+  </button>
+</div>
+
+</div>
+</nav>
+
+
+</header>
+
+
+
+<section class="hero">
+    <div class="hero-bg" id="heroBg"></div>
+    <div class="hero-content">
+    <h1>Click <span class="to">to</span> Pick Your Perfect Movie</h1>
+    <p class="tagline">Never waste time choosing — discover your perfect movie in a single spin!</p>
+    <p>Your perfect movie, one click away. Discover, explore, and enjoy personalized movie recommendations.</p>
+    <button>Get Started</button>
+</div>
+
+<div class="wheel-container">
+    <div class="pointer"></div> <!-- arrow above the wheel -->
+    <div class="wheel" id="wheel"></div>
+   <div class="spin-label">
+  Click <span class="highlight">&</span> Spin
+</div> <!-- text below wheel -->
+</div>
+</section>
+
+<section id="searchResultsSection" class="movie-section" style="display:none;">
+  <h2>Search Results</h2>
+  <div id="searchResults" class="movie-grid"></div>
+</section>
+
+<section class="movie-section">
+    <h2>Trending now</h2>
+    <div class="movie-row" id="trending"></div>
+</section>
+
+<section class="movie-section">
+    <h2>Top picks for you</h2>
+    <div class="movie-row" id="topPicks"></div>
+</section>
+
+<section class="movie-section">
+    <h2>Indian movies</h2>
+    <div class="movie-row" id="indianMovies"></div>
+</section>
+
+<section class="movie-section">
+    <h2>Science Fiction</h2>
+    <div class="movie-row" id="sciFiMovies"></div>
+</section>
+
+<section class="movie-section">
+    <h2>Action</h2>
+    <div class="movie-row" id="actionMovies"></div>
+</section>
+
+<section class="movie-section">
+    <h2>Adventure</h2>
+    <div class="movie-row" id="adventureMovies"></div>
+</section>
+
+<section class="movie-section">
+    <h2>Comedy</h2>
+    <div class="movie-row" id="comedyMovies"></div>
+</section>
+
+<section class="movie-section">
+    <h2>Thriller</h2>
+    <div class="movie-row" id="thrillerMovies"></div>
+</section>
+
+<section class="movie-section">
+    <h2>Horror</h2>
+    <div class="movie-row" id="horrorMovies"></div>
+</section>
+
+<section class="movie-section">
+    <h2>Fantasy</h2>
+    <div class="movie-row" id="fantasyMovies"></div>
+</section>
+
+<section class="movie-section" id="wishlistSection">
+  <h2>My Wishlist</h2>
+  <div id="wishlistMovies"></div>
+</section>
+
+<div id="searchOverlay" class="overlay-search">
+  <div class="overlay-header">
+    <h2 id="searchTitle">Search Results</h2>
+    <button class="close-btn" onclick="closeSearch()">❌</button>
+  </div>
+
+ <div class="overlay-content">
+  <div id="searchResultsOverlay" class="movie-grid"></div>
+</div>
+
+</div>
+ 
+<button id="scrollBottomBtn"><span>➔</span></button>
+
+
+
+<footer>&copy; 2025 C2P - Click to Pick. All rights reserved.</footer>
+
+<div class="modal" id="movieModal">
+    <div class="modal-content">
+        <img id="moviePoster" src="" alt="Movie Poster" />
+        <h3 id="movieTitle"></h3>
+        <button onclick="closeModal()">Close</button>
+    </div>
+</div>
+
+<script>
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyCMLPKvyBo2Swf6-E7THegOj3_hGOpBENU",
+  authDomain: "ctop-51e6b.firebaseapp.com",
+  projectId: "ctop-51e6b",
+  storageBucket: "ctop-51e6b.firebasestorage.app",
+  messagingSenderId: "628062184908",
+  appId: "1:628062184908:web:03701488f38d79d3ca2969",
+  measurementId: "G-DTRH4EK4N6"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+console.log("🔥 Firebase initialized");
+
+// --- Enable Anonymous Login ---
+// ✅ Improved Firebase Auth + auto-load wishlist
+firebase.auth().onAuthStateChanged(async (user) => {
+  if (user) {
+    console.log("✅ Logged in:", user.uid);
+    window.currentUser = user;
+    userId = user.uid;  // store UID globally
+    await loadWishlist(); // load wishlist now that we know userId
+  } else {
+    console.log("🔄 Signing in anonymously...");
+    try {
+      const result = await firebase.auth().signInAnonymously();
+      console.log("✅ Anonymous login successful:", result.user.uid);
+      window.currentUser = result.user;
+      userId = result.user.uid;
+      await loadWishlist();
+    } catch (error) {
+      console.error("❌ Auth error:", error);
+    }
+  }
+});
+
+
+const TMDB_KEY = '7a844923dc779f45770d8f6c0df8d9c9';
+const OMDB_KEY = '26f8b30b';
+const IMG_URL = 'https://image.tmdb.org/t/p/w500';
+let allMovies = [];
+let heroPosters = [];
+
+// Fetch IMDb rating
+async function getImdbRating(imdbId) {
+    if (!imdbId) return null;
+    try {
+        const res = await fetch(`https://www.omdbapi.com/?apikey=${OMDB_KEY}&i=${imdbId}`);
+        const data = await res.json();
+        return data.imdbRating && data.imdbRating !== 'N/A' ? data.imdbRating : null;
+    } catch {
+        return null;
+    }
+}
+
+async function fetchMovies(url, containerId) {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    // Filter out adult/unsafe content manually
+    const safeMovies = data.results
+        .filter(m => !m.adult)
+        .slice(0, 20);
+
+    for (let movie of safeMovies) {
+        // Extra check: fetch release certificates
+        const certRes = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}/release_dates?api_key=${TMDB_KEY}`);
+        const certData = await certRes.json();
+        
+        const usCert = certData.results.find(r => r.iso_3166_1 === "US");
+        const cert = usCert?.release_dates?.[0]?.certification || "";
+        if (["R", "NC-17", "TV-MA"].includes(cert)) continue;
+
+        const extRes = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}/external_ids?api_key=${TMDB_KEY}`);
+        const extData = await extRes.json();
+        const imdbId = extData.imdb_id;
+        const rating = await getImdbRating(imdbId) || (movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A');
+        allMovies.push(movie);
+
+        const isInWishlist = wishlist.some(m => m.id === movie.id);
+        const heart = isInWishlist ? '❤️' : '🤍';
+
+        const safeTitle = movie.title.replace(/'/g, "\\'");
+        const poster = movie.poster_path 
+            ? IMG_URL + movie.poster_path 
+            : "https://via.placeholder.com/500x750?text=No+Image"; // ✅ moved outside template literal
+
+        const card = document.createElement('div');
+        card.className = 'movie-card';
+        card.innerHTML = `
+            <img src="${poster}" alt="${movie.title}" />
+            <div class="overlay">
+                <h4>${movie.title}</h4>
+                <p>⭐ ${rating}/10</p>
+            </div>
+            <button 
+              class="wishlist-btn" 
+              onclick="event.stopPropagation(); addToWishlist(${movie.id}, '${safeTitle}', '${movie.poster_path}', this)">
+              ${heart}
+            </button>
+        `;
+
+        card.addEventListener('click', () => window.location.href = `movie-details.html?id=${movie.id}`);
+        document.getElementById(containerId).appendChild(card);
+        requestAnimationFrame(() => card.classList.add('visible'));
+    }
+}
+
+
+
+
+async function fetchIndianMovies() {
+    const releaseDateFilter = '&primary_release_date.gte=2010-01-01';
+
+    // Fetch by language
+    const tamilRes = await fetch(
+        `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_original_language=ta&sort_by=popularity.desc${releaseDateFilter}&include_adult=false&certification_country=IN&certification.lte=U`
+    ).then(r => r.json());
+
+    const hindiRes = await fetch(
+        `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_original_language=hi&sort_by=popularity.desc${releaseDateFilter}&include_adult=false`
+    ).then(r => r.json());
+
+    const teluguRes = await fetch(
+        `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_original_language=te&sort_by=popularity.desc${releaseDateFilter}&include_adult=false`
+    ).then(r => r.json());
+
+    const malayalamRes = await fetch(
+        `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_original_language=ml&sort_by=popularity.desc${releaseDateFilter}&include_adult=false`
+    ).then(r => r.json());
+
+    // Merge and shuffle
+    const combinedMovies = [
+        ...tamilRes.results.slice(0, 5),
+        ...hindiRes.results.slice(0, 5),
+        ...teluguRes.results.slice(0, 5),
+        ...malayalamRes.results.slice(0, 5)
+    ].sort(() => Math.random() - 0.5);
+
+    const container = document.getElementById('indianMovies');
+    container.innerHTML = '';
+
+    for (let movie of combinedMovies) {
+        const extRes = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}/external_ids?api_key=${TMDB_KEY}`);
+        const extData = await extRes.json();
+        const imdbId = extData.imdb_id;
+        const rating = (await getImdbRating(imdbId)) || (movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A');
+
+        allMovies.push(movie);
+
+        const safeTitle = movie.title.replace(/'/g, "\\'");
+        const card = document.createElement('div');
+        card.className = 'movie-card';
+        card.innerHTML = `
+            <img src="${IMG_URL + movie.poster_path}" alt="${movie.title}" />
+            <div class="overlay">
+                <h4>${movie.title}</h4>
+                <p>⭐ ${rating}/10</p>
+            </div>
+            <button 
+  class="wishlist-btn" onclick="event.stopPropagation(); addToWishlist(${movie.id}, '${safeTitle}', '${movie.poster_path}', this)">🤍</button>
+
+        `;
+
+        card.addEventListener('click', () => window.location.href = `movie-details.html?id=${movie.id}`);
+
+        container.appendChild(card);
+        requestAnimationFrame(() => card.classList.add('visible'));
+    }
+}
+
+
+async function loadHeroPosters() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const recentDate = `${year - 2}-01-01`; // only movies from last 2 years
+
+    const tamilMovies = await fetch(
+        `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_original_language=ta&sort_by=popularity.desc&include_adult=false&primary_release_date.gte=${recentDate}&certification_country=IN&certification.lte=UA`
+    ).then((r) => r.json());
+
+    const englishMovies = await fetch(
+        `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_original_language=en&sort_by=popularity.desc&include_adult=false&primary_release_date.gte=${recentDate}&certification_country=US&certification.lte=PG-13`
+    ).then((r) => r.json());
+
+    heroPosters = [
+        ...tamilMovies.results.slice(0, 4),
+        ...englishMovies.results.slice(0, 4),
+    ].map((m) => IMG_URL + m.poster_path);
+
+    if (heroPosters.length > 0) {
+        document.getElementById('heroBg').style.backgroundImage = `url(${heroPosters[0]})`;
+    }
+}
+
+function startBackgroundChange() {
+    let idx = 0;
+    const bg = document.getElementById('heroBg');
+    setInterval(() => {
+        idx = (idx + 1) % heroPosters.length;
+        bg.classList.remove('show');
+        setTimeout(() => {
+            bg.style.backgroundImage = `url(${heroPosters[idx]})`;
+            bg.classList.add('show');
+        }, 500);
+    }, 7000);
+}
+
+
+
+fetchMovies(`https://api.themoviedb.org/3/trending/movie/week?api_key=${TMDB_KEY}`, 'trending');
+fetchMovies(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_KEY}`, 'topPicks');
+fetchIndianMovies(); // 👈 Add this line to load Indian movies
+
+
+// 🎬 Define all genres & containers dynamically
+const genres = [
+  { id: 878, name: 'sciFiMovies', title: 'Sci-Fi' },
+  { id: 28,  name: 'actionMovies', title: 'Action' },
+  { id: 12,  name: 'adventureMovies', title: 'Adventure' },
+  { id: 35,  name: 'comedyMovies', title: 'Comedy' },
+  { id: 53,  name: 'thrillerMovies', title: 'Thriller' },
+  { id: 27,  name: 'horrorMovies', title: 'Horror' },
+  { id: 14,  name: 'fantasyMovies', title: 'Fantasy' }
+];
+
+// 🚀 Fetch unique top-rated + famous movies for each genre
+genres.forEach((g, index) => {
+  // Randomize page number slightly so genres don’t overlap
+  const randomPage = 1 + Math.floor(Math.random() * 3);
+
+  const url = `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_genres=${g.id}&sort_by=popularity.desc&vote_count.gte=1000&include_adult=false&page=${randomPage}`;
+
+  fetchMovies(url, g.name);
+});
+
+
+loadHeroPosters().then(startBackgroundChange);
+
+const wheel = document.getElementById('wheel');
+
+wheel.addEventListener('click', () => {
+    const degree = Math.floor(3000 + Math.random() * 1000);
+    wheel.style.transform = `rotate(${degree}deg)`;
+
+    setTimeout(() => {
+        if (allMovies.length > 0) {
+            const randomMovie = allMovies[Math.floor(Math.random() * allMovies.length)];
+
+            // Show result in popup (modal)
+            document.getElementById('moviePoster').src = IMG_URL + randomMovie.poster_path;
+            document.getElementById('movieTitle').innerText = randomMovie.title;
+            document.getElementById('movieModal').style.display = 'flex';
+
+            // 🎉 Fire confetti
+            triggerConfetti();
+
+            // ✅ Make the whole popup clickable → go to details page
+            const movieLink = () => {
+                window.location.href = `movie-details.html?id=${randomMovie.id}`;
+            };
+            document.getElementById('moviePoster').onclick = movieLink;
+            document.getElementById('movieTitle').onclick = movieLink;
+
+        } else {
+            alert("No movies available yet. Please wait for movies to load!");
+        }
+    }, 4000); // match spin duration (4s ease-out)
+});
+
+// Confetti trigger
+function triggerConfetti() {
+    confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 }
+    });
+}
+
+// Close modal
+function closeModal() {
+    document.getElementById('movieModal').style.display = 'none';
+}
+
+
+// Scroll buttons with hide feature
+function addScrollButtons(sectionId) {
+    const section = document.getElementById(sectionId);
+    const container = section.closest('.movie-section');
+    const leftBtn = document.createElement('button');
+    const rightBtn = document.createElement('button');
+
+    leftBtn.innerHTML = '&#10094;';
+    rightBtn.innerHTML = '&#10095;';
+    leftBtn.className = 'scroll-btn left';
+    rightBtn.className = 'scroll-btn right';
+
+    function updateButtons() {
+        const scrollLeft = section.scrollLeft;
+        const maxScrollLeft = section.scrollWidth - section.clientWidth;
+        leftBtn.classList.toggle('show', scrollLeft > 10);
+        rightBtn.classList.toggle('show', scrollLeft < maxScrollLeft - 10);
+    }
+
+    section.addEventListener('scroll', updateButtons);
+    window.addEventListener('resize', updateButtons);
+
+    leftBtn.addEventListener('click', () => section.scrollBy({ left: -300, behavior: 'smooth' }));
+    rightBtn.addEventListener('click', () => section.scrollBy({ left: 300, behavior: 'smooth' }));
+
+    container.appendChild(leftBtn);
+    container.appendChild(rightBtn);
+
+    updateButtons();
+}
+addScrollButtons('trending');
+addScrollButtons('topPicks');
+addScrollButtons('indianMovies');
+addScrollButtons('sciFiMovies');
+addScrollButtons('actionMovies');
+addScrollButtons('adventureMovies');
+addScrollButtons('comedyMovies');
+addScrollButtons('thrillerMovies');
+addScrollButtons('horrorMovies');
+addScrollButtons('fantasyMovies');
+
+
+// 👇 Add this new part for Get Started
+document.querySelector('.hero-content button').addEventListener('click', () => {
+    // Reveal all sections
+    document.querySelectorAll('.movie-section').forEach(section => {
+        section.classList.add('show');
+    });
+
+    // Smooth scroll specifically to Top Picks
+    document.getElementById('topPicks').closest('.movie-section').scrollIntoView({ behavior: 'smooth' });
+});
+
+function triggerConfetti() {
+    confetti({
+        particleCount: 120,
+        spread: 70,
+        origin: { y: 0.6 }
+    });
+}
+
+async function searchMovies() {
+  const query = document.getElementById('searchInput').value.trim();
+  if (!query) return;
+
+  const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    // Show search results section
+    const section = document.getElementById('searchResultsSection');
+    const container = document.getElementById('searchResults');
+    section.style.display = 'block';
+    container.innerHTML = '';
+
+    // Build cards
+    data.results.slice(0, 12).forEach(movie => {
+      const card = document.createElement('div');
+      card.className = 'movie-card';
+      const rating = movie.vote_average ? movie.vote_average.toFixed(1) : "N/A";
+      const poster = movie.poster_path ? IMG_URL + movie.poster_path : "https://via.placeholder.com/500x750?text=No+Image";
+
+  // Check if the movie is already in the wishlist
+const isInWishlist = wishlist.some(m => m.id === movie.id);
+const heart = isInWishlist ? '❤️' : '🤍';
+
+// Set the card HTML
+card.innerHTML = `
+    <img src="${poster}" alt="${movie.title}" />
+    <div class="overlay">
+      <h4>${movie.title}</h4>
+      <p>⭐ ${rating}/10</p>
+    </div>
+    <button class="wishlist-btn" onclick="event.stopPropagation(); addToWishlist(${movie.id}, '${movie.title.replace(/'/g, "\\'")}', '${movie.poster_path}', this)">${heart}</button>
+`;
+
+
+      // Navigate on click
+      card.addEventListener('click', () => {
+        window.location.href = `movie-details.html?id=${movie.id}`;
+      });
+
+      container.appendChild(card);
+      requestAnimationFrame(() => card.classList.add('visible'));
+    });
+
+    // Scroll smoothly to results
+    section.scrollIntoView({ behavior: 'smooth' });
+  } catch (error) {
+    console.error("Search error:", error);
+  }
+}
+
+
+function closeSearch() {
+  document.getElementById('searchOverlay').style.display = 'none';
+}
+
+
+// 🎬 Dynamic placeholder suggestions for search bar
+const searchInput = document.getElementById("searchInput");
+
+// Some random movie suggestions (you can expand this list)
+const movieSuggestions = [
+  "Inception", "Interstellar", "Avengers: Endgame",
+  "The Dark Knight", "Parasite", "The Matrix",
+  "KGF", "Baahubali", "3 Idiots",
+  "Spider-Man: No Way Home", "Joker", "Titanic"
+];
+
+let suggestionIndex = 0;
+
+function rotatePlaceholderSmooth() {
+  // Fade out
+  searchInput.classList.add("fade");
+
+  // After fade-out, change placeholder and fade in
+  setTimeout(() => {
+    searchInput.setAttribute("placeholder", `Try "${movieSuggestions[suggestionIndex]}"`);
+    suggestionIndex = (suggestionIndex + 1) % movieSuggestions.length;
+    searchInput.classList.remove("fade"); // fade in
+  }, 500); // match CSS transition 0.5s
+}
+
+let placeholderInterval;
+
+function startPlaceholderCycle() {
+  placeholderInterval = setInterval(rotatePlaceholderSmooth, 3000);
+}
+
+// Pause cycling while typing
+searchInput.addEventListener("input", () => {
+  if (searchInput.value.trim() !== "") {
+    clearInterval(placeholderInterval);
+    searchInput.classList.remove("fade"); // ensure visible while typing
+  } else {
+    clearInterval(placeholderInterval);
+    startPlaceholderCycle();
+  }
+});
+
+// Initialize first placeholder
+searchInput.setAttribute("placeholder", `Try "${movieSuggestions[suggestionIndex]}"`);
+suggestionIndex = (suggestionIndex + 1) % movieSuggestions.length;
+startPlaceholderCycle();
+
+let wishlist = [];
+let userId = null;
+
+// Load wishlist from Firebase
+async function loadWishlist() {
+  if (!userId) return; // wait until userId is ready
+  try {
+    const doc = await db.collection('wishlists').doc(userId).get();
+    if (doc.exists) {
+      wishlist = doc.data().movies || [];
+      renderWishlist();
+    }
+  } catch (err) {
+    console.error("Failed to load wishlist:", err);
+  }
+}
+
+// Save wishlist to Firebase
+async function saveWishlist() {
+  if (!userId) {
+    console.warn("Cannot save wishlist: userId not ready yet");
+    return;
+  }
+  try {
+    await db.collection('wishlists').doc(userId).set({ movies: wishlist });
+    console.log("Wishlist saved!");
+  } catch (err) {
+    console.error("Failed to save wishlist:", err);
+  }
+}
+
+// Add to wishlist
+async function addToWishlist(id, title, poster, btn = null) {
+  // Wait until Firebase auth is ready
+  if (!firebase.auth().currentUser) {
+    console.log("⏳ Waiting for Firebase auth...");
+    return;
+  }
+
+  const user = firebase.auth().currentUser;
+
+  try {
+    const docRef = db.collection("wishlists").doc(user.uid);
+    const doc = await docRef.get();
+    let movies = doc.exists ? doc.data().movies : [];
+
+    const movieIndex = movies.findIndex(m => m.id === id);
+
+    if (movieIndex === -1) {
+      // Add movie
+      movies.push({ id, title, poster });
+      await docRef.set({ movies });
+
+      // Update local wishlist immediately
+      wishlist = movies;
+      renderWishlist();
+
+      console.log("✅ Movie added to wishlist:", title);
+
+      if (btn) {
+        btn.textContent = '❤️';
+        btn.classList.add('pop');
+      }
+    } else {
+      // Remove movie
+      movies.splice(movieIndex, 1);
+      await docRef.set({ movies });
+
+      // Update local wishlist immediately
+      wishlist = movies;
+      renderWishlist();
+
+      console.log("❌ Movie removed from wishlist:", title);
+
+      if (btn) {
+        btn.textContent = '🤍';
+        btn.classList.add('pop');
+      }
+    }
+
+    // Remove animation class after it finishes
+    if (btn) {
+      setTimeout(() => btn.classList.remove('pop'), 300);
+    }
+
+  } catch (e) {
+    console.error("❌ Error adding to wishlist:", e);
+  }
+}
+
+
+
+// Remove from wishlist
+function removeFromWishlist(id) {
+  wishlist = wishlist.filter(m => m.id !== id);
+  renderWishlist();
+  saveWishlist();
+}
+
+// Render wishlist in DOM
+function renderWishlist() {
+  const wishlistSection = document.getElementById("wishlistSection");
+  const container = document.getElementById("wishlistMovies");
+
+  container.innerHTML = "";
+  wishlist.forEach(movie => {
+    const card = document.createElement("div");
+    card.className = "wishlist-card";
+    card.innerHTML = `
+      <img src="${IMG_URL + movie.poster}" alt="${movie.title}" />
+      <button class="remove-btn" onclick="removeFromWishlist(${movie.id})">❌</button>
+    `;
+    container.appendChild(card);
+  });
+
+  wishlistSection.style.display = wishlist.length ? "block" : "none";
+}
+const scrollBottomBtn = document.getElementById('scrollBottomBtn');
+
+scrollBottomBtn.addEventListener('click', () => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+});
+
+// Optional: Show/hide button based on scroll position
+window.addEventListener('scroll', () => {
+    if (window.scrollY > 300) { // show after scrolling 300px
+        scrollBottomBtn.style.display = 'block';
+    } else {
+        scrollBottomBtn.style.display = 'none';
+    }
+});
+
+
+</script>
+</body>
+</html>

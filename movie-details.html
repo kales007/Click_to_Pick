@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Details</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: #141414;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        header {
+            padding: 20px 60px;
+            background: rgba(0,0,0,0.9);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #E50914;
+        }
+
+        /* Hero Backdrop Section */
+        .hero {
+            position: relative;
+            width: 100%;
+            height: 60vh;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            filter: blur(8px);
+            transition: opacity 1.2s ease-in-out, filter 1.2s ease-in-out;
+        }
+        .hero.loaded {
+            opacity: 1;
+            filter: blur(0px);
+        }
+        .hero::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(20, 20, 20, 1) 0%, rgba(20, 20, 20, 0.6) 50%, transparent 100%);
+        }
+
+        /* Glass Panel */
+        .glass-background {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 40px;
+            margin: -80px 60px 40px;
+            box-shadow:
+                0 4px 30px rgba(0, 0, 0, 0.5),
+                inset 0 0 0.5px rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            position: relative;
+            z-index: 5;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+        }
+        .poster {
+            width: 350px;
+            flex-shrink: 0;
+        }
+        .poster img {
+            width: 100%;
+            border-radius: 12px;
+        }
+        .details {
+            flex: 1;
+            min-width: 300px;
+        }
+        .details h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        .details p {
+            line-height: 1.6;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+        .rating {
+            font-size: 1.2rem;
+            color: #ffcc00;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+        h3 {
+            color: #E50914;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        .person-container {
+            display: flex;
+            overflow-x: auto;
+            gap: 15px;
+            padding-bottom: 10px;
+            scroll-behavior: smooth;
+        }
+        .person-card {
+            flex: 0 0 auto;
+            width: 120px;
+            text-align: center;
+            font-size: 0.9rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .person-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            background: #fff;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: #000;
+            color: #999;
+            margin-top: 40px;
+        }
+        .hero {
+    background-attachment: fixed; /* Parallax effect */
+    background-position: center top;
+    background-size: cover;
+    transition: opacity 1.2s ease-in-out, filter 1.2s ease-in-out;
+}
+
+            .logo img {
+    height: 40px; /* adjust to fit navbar */
+    width: auto;
+    object-fit: contain;
+}
+
+/* IMDb Button Hover */
+#imdbButton {
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+#imdbButton:hover {
+    background: #d4ac0d;    /* slightly darker gold */
+    transform: scale(1.05);
+}
+
+/* Rotten Tomatoes Button Hover */
+#rtButton {
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+#rtButton:hover {
+    background: #c1270c;    /* slightly darker red */
+    transform: scale(1.05);
+}
+
+/* Trailer Button Hover */
+button#trailerBtn {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+button#trailerBtn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(229,9,20,0.7);
+}
+
+/* Genre Tags Hover */
+#movieGenres span {
+    transition: transform 0.3s ease, background 0.3s ease;
+    cursor: pointer;
+}
+#movieGenres span:hover {
+    transform: translateY(-3px) scale(1.05);
+    background: #E50914; /* bright red highlight on hover */
+}
+/* Watch Trailer Button Animation */
+/* Watch Trailer Button Elegant Hover Animation */
+#trailerBtn {
+    transition: transform 0.25s ease, background-color 0.25s ease;
+}
+
+#trailerBtn:hover {
+    transform: translateY(-4px) scale(1.05);
+    background-color: #ff1a1a; /* slightly brighter red */
+}
+#imdbButton, #rtButton {
+    margin-right: 10px; /* or 15px */
+}
+
+.poster img {
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+}
+
+.genre-tag {
+    display: inline-block;
+    background: #222;
+    color: #fff;
+    padding: 5px 12px;
+    margin: 4px 4px 4px 0;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.3s, background 0.3s;
+}
+
+.genre-tag:hover {
+    transform: translateY(-2px) scale(1.05);
+    background: #E50914;
+}
+
+#movieGenres {
+    margin-top: 15px; /* adds gap above genre tags */
+    margin-bottom: 20px; /* optional, adds space below too */
+}
+.person-card:hover {
+    transform: scale(1.08) rotateY(5deg) rotateX(3deg);
+    box-shadow: 0 8px 20px rgba(229, 9, 20, 0.7);
+}
+
+.person-card p small {
+    display: block;
+    color: #aaa;
+    transition: color 0.3s ease;
+}
+.person-card:hover p small {
+    color: #E50914; /* highlight job/character */
+}
+body.exiting {
+  filter: blur(4px);
+  transform: scale(0.98);
+  transition: all 0.4s ease;
+}
+
+    </style>
+</head>
+<body>
+<header>
+    <div class="logo">
+  <img src="logo.png" alt="C2P Logo" id="logoImg">
+</div>
+
+</header>
+
+<!-- Hero Backdrop -->
+<div id="hero" class="hero"></div>
+
+<!-- Glass Panel -->
+<div class="glass-background">
+    <div class="container">
+        <div class="poster">
+            <img id="moviePoster" src="" alt="Movie Poster">
+        </div>
+        <div class="details">
+            <h1 id="movieTitle"></h1>
+            <p id="movieOverview"></p>
+            <div id="movieGenres"></div>
+            <div class="rating" id="movieRating"></div>
+              <button id="imdbButton" 
+        style="padding:10px 20px; margin-bottom:20px; background:#f5c518; color:#000; font-weight:bold; border:none; border-radius:5px; cursor:pointer;">
+        IMDb
+    </button>
+    <button id="rtButton" 
+    style="padding:10px 20px; margin-bottom:20px; background:#fa320a; color:#fff; font-weight:bold; border:none; border-radius:5px; cursor:pointer;">
+    Rotten Tomatoes
+</button>
+            <h3>Cast</h3>
+            <div id="cast" class="person-container"></div>
+            <h3>Crew</h3>
+            <div id="crew" class="person-container"></div>
+        </div>
+    </div>
+</div>
+
+<div id="trailerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);justify-content:center;align-items:center;z-index:3000;">
+    <div style="position:relative;width:80%;max-width:900px;">
+        <iframe id="trailerIframe" width="100%" height="500" src="" frameborder="0" allowfullscreen style="border-radius:12px;"></iframe>
+        <button onclick="closeTrailer()" style="position:absolute;top:-20px;right:-20px;background:#e50914;color:#fff;border:none;padding:10px 15px;border-radius:50%;cursor:pointer;font-size:1.2rem;">✕</button>
+    </div>
+</div>
+
+<footer>&copy; 2025 C2P - Click to Pick. All rights reserved.</footer>
+
+<script>
+const TMDB_KEY = '7a844923dc779f45770d8f6c0df8d9c9';
+const IMG_URL = 'https://image.tmdb.org/t/p/w500';
+const BACKDROP_URL = 'https://image.tmdb.org/t/p/original';
+const PLACEHOLDER_IMG = 'https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png';
+const urlParams = new URLSearchParams(window.location.search);
+const movieId = urlParams.get('id');
+
+async function fetchMovieDetails(movieId) {
+    const movieUrl = `https://api.themoviedb.org/3/movie/${movieId}?api_key=${TMDB_KEY}&language=en-US`;
+    const res = await fetch(movieUrl);
+    const movie = await res.json();
+
+    // Preload backdrop image for smooth fade-in
+    const backdropImg = new Image();
+    backdropImg.src = BACKDROP_URL + movie.backdrop_path;
+    backdropImg.onload = () => {
+        const heroEl = document.getElementById('hero');
+        heroEl.style.backgroundImage = `url(${BACKDROP_URL + movie.backdrop_path})`;
+        heroEl.classList.add('loaded');
+    };
+
+    // Poster & text details
+    document.getElementById('moviePoster').src = IMG_URL + movie.poster_path;
+    document.getElementById('movieTitle').innerText = movie.title;
+    document.getElementById('movieOverview').innerText = movie.overview;
+    const genresContainer = document.getElementById('movieGenres');
+if(movie.genres && movie.genres.length > 0){
+    genresContainer.innerHTML = movie.genres.map(g => 
+        `<span class="genre-tag">${g.name}</span>`
+    ).join('');
+}
+
+
+    let ratingText = `TMDB: ⭐ ${movie.vote_average.toFixed(1)} / 10`;
+
+    if (movie.imdb_id) {
+        const omdbUrl = `https://www.omdbapi.com/?i=${movie.imdb_id}&apikey=26f8b30b`;
+        const omdbRes = await fetch(omdbUrl);
+        const omdbData = await omdbRes.json();
+        if (omdbData && omdbData.Ratings) {
+            omdbData.Ratings.forEach(source => {
+                ratingText += `<br>${source.Source}: ⭐ ${source.Value}`;
+            });
+        }
+    }
+    document.getElementById('movieRating').innerHTML = ratingText;
+
+    // ⭐ IMDb Button logic – add here
+    const imdbButton = document.getElementById('imdbButton');
+    if (movie.imdb_id) {
+        imdbButton.style.display = 'inline-block'; // show button
+        imdbButton.onclick = () => {
+            window.open(`https://www.imdb.com/title/${movie.imdb_id}/`, '_blank');
+        };
+    } else {
+        imdbButton.style.display = 'none'; // hide if no IMDb ID
+    }
+    
+    const rtButton = document.getElementById('rtButton');
+if (movie.imdb_id) {
+    // Construct Rotten Tomatoes search URL using movie title
+    const movieTitleEncoded = encodeURIComponent(movie.title);
+    rtButton.style.display = 'inline-block';
+    rtButton.onclick = () => {
+        window.open(`https://www.rottentomatoes.com/search?search=${movieTitleEncoded}`, '_blank');
+    };
+} else {
+    rtButton.style.display = 'none';
+}
+
+    // Fetch cast and crew
+    fetchCastAndCrew(movieId);
+}
+
+
+async function fetchCastAndCrew(movieId) {
+    const creditsUrl = `https://api.themoviedb.org/3/movie/${movieId}/credits?api_key=${TMDB_KEY}`;
+    const res = await fetch(creditsUrl);
+    const data = await res.json();
+
+    document.getElementById('cast').innerHTML = data.cast.slice(0, 8).map(person => 
+        `<div class="person-card">
+            <img src="${person.profile_path ? IMG_URL + person.profile_path : PLACEHOLDER_IMG}" alt="${person.name}">
+            <p>${person.name}<br><small>${person.character}</small></p>
+        </div>`
+    ).join('');
+
+    document.getElementById('crew').innerHTML = data.crew.filter(c => c.job === "Director" || c.job === "Producer")
+        .slice(0, 5).map(person => 
+        `<div class="person-card">
+            <img src="${person.profile_path ? IMG_URL + person.profile_path : PLACEHOLDER_IMG}" alt="${person.name}">
+            <p>${person.name}<br><small>${person.job}</small></p>
+        </div>`
+    ).join('');
+}
+async function fetchTrailer(movieId) {
+    const videoUrl = `https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${TMDB_KEY}&language=en-US`;
+    const res = await fetch(videoUrl);
+    const data = await res.json();
+
+    const trailer = data.results.find(v => v.type === "Trailer" && v.site === "YouTube");
+    if (trailer) {
+        const trailerIframe = document.getElementById("trailerIframe");
+        trailerIframe.src = `https://www.youtube.com/embed/${trailer.key}?autoplay=1`;
+        document.getElementById("trailerModal").style.display = "flex";
+    } else {
+        alert("Trailer not available.");
+    }
+}
+
+function closeTrailer() {
+    const modal = document.getElementById("trailerModal");
+    modal.style.display = "none";
+    document.getElementById("trailerIframe").src = "";
+}
+
+// Add a button dynamically in details section
+// Add a button dynamically in details section
+const trailerBtn = document.createElement('button');
+trailerBtn.id = 'trailerBtn'; // ✅ Assign ID so CSS applies
+trailerBtn.innerText = "▶ Watch Trailer";
+trailerBtn.style.cssText = "padding:12px 24px;background:#E50914;color:#fff;border:none;border-radius:10px;cursor:pointer;margin-bottom:20px;font-weight:bold;";
+trailerBtn.onclick = () => fetchTrailer(movieId);
+document.querySelector('.details').insertBefore(trailerBtn, document.getElementById('movieOverview'));
+
+document.querySelectorAll('a').forEach(a => {
+  a.addEventListener('click', () => {
+    document.body.classList.add('exiting');
+  });
+});
+
+fetchMovieDetails(movieId);
+</script>
+</body>
+</html>
